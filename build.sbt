@@ -4,42 +4,19 @@ name := """Streamer.io"""
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val depForPlay = Seq(
+  guice,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
+  "com.h2database" % "h2" % "1.4.196"
+)
+
+lazy val root = (project in file("."))
+  .settings(
+    scalaVersion := "2.11.8",
+    libraryDependencies ++= depForPlay
+  ).enablePlugins(PlayScala)
 
 resolvers += Resolver.sonatypeRepo("snapshots")
-
-scalaVersion := "2.11.8"
-
-libraryDependencies += guice
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
-libraryDependencies += "com.h2database" % "h2" % "1.4.196"
-
-
-
-
-
-
-
-lazy val sparkSubmit = taskKey[Unit]("Execute spark-submit")
-lazy val testKey = taskKey[Unit]("Testing")
-
-
-
-lazy val depForSpark = Seq(
-  "org.apache.spark" % "spark-core_2.11" % "2.2.0",
-  "org.apache.spark" % "spark-sql_2.11" % "2.2.0"
-)
-
-lazy val sparkProj = (project in file("./SparkProject")).settings(
-  organization := "test",
-  version := "1",
-  libraryDependencies ++= depForSpark,
-  sparkSubmit := {
-    "/home/osboxes/IdeaProjects/streamer.io/SparkProject/scripts/sparkSubmit.sh" !
-  },
-  testKey := println("Hello")
-
-)
 
 resolvers ++= Seq(
   "JBoss Repository" at "http://repository.jboss.org/nexus/content/repositories/releases/",
@@ -55,3 +32,28 @@ resolvers ++= Seq(
   "Mesosphere Public Repository" at "http://downloads.mesosphere.io/maven",
   Resolver.sonatypeRepo("public")
 )
+
+
+
+
+
+lazy val sparkSubmit = taskKey[Unit]("Execute spark-submit")
+
+lazy val depForSpark = Seq(
+  "org.apache.spark" % "spark-core_2.11" % "2.2.0" % "provided",
+  "org.apache.spark" % "spark-sql_2.11" % "2.2.0" % "provided",
+  "org.apache.spark" % "spark-streaming_2.11" % "2.2.0" % "provided",
+  "org.apache.spark" % "spark-streaming-kafka-0-8_2.11" % "2.2.0" % "provided"
+)
+
+lazy val sparkProj = (project in file("./SparkProject")).settings(
+  organization := "test",
+  version := "1",
+  libraryDependencies ++= depForSpark,
+  scalaVersion := "2.11.8",
+  sparkSubmit := {
+    "/home/osboxes/IdeaProjects/streamer.io/SparkProject/scripts/sparkSubmit.sh" !
+  }
+)
+
+

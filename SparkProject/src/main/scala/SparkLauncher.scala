@@ -2,8 +2,9 @@ package main
 
 import org.apache.spark.sql.SparkSession
 
-class SparkLauncher {
+object SparkLauncher {
   def main(args: Array[String]): Unit = {
+    println("STARTING COMPUTATION")
     val logFile = "/usr/local/spark/README.md"
     val spark = SparkSession.builder.appName("Simple Application").getOrCreate()
     val logData = spark.read.textFile(logFile).cache()
