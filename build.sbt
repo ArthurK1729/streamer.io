@@ -1,3 +1,5 @@
+import scala.sys.process._
+
 name := """Streamer.io"""
 
 version := "1.0-SNAPSHOT"
@@ -15,6 +17,14 @@ libraryDependencies += "com.h2database" % "h2" % "1.4.196"
 
 
 
+
+
+
+lazy val sparkSubmit = taskKey[Unit]("Execute spark-submit")
+lazy val testKey = taskKey[Unit]("Testing")
+
+
+
 lazy val depForSpark = Seq(
   "org.apache.spark" % "spark-core_2.11" % "2.2.0",
   "org.apache.spark" % "spark-sql_2.11" % "2.2.0"
@@ -23,7 +33,11 @@ lazy val depForSpark = Seq(
 lazy val sparkProj = (project in file("./SparkProject")).settings(
   organization := "test",
   version := "1",
-  libraryDependencies ++= depForSpark
+  libraryDependencies ++= depForSpark,
+  sparkSubmit := {
+    "/home/osboxes/IdeaProjects/streamer.io/SparkProject/scripts/sparkSubmit.sh" !
+  },
+  testKey := println("Hello")
 
 )
 

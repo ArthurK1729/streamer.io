@@ -2,7 +2,7 @@ package main
 
 import org.apache.spark.sql.SparkSession
 
-object SparkLauncher {
+class SparkLauncher {
   def main(args: Array[String]): Unit = {
     val logFile = "/usr/local/spark/README.md"
     val spark = SparkSession.builder.appName("Simple Application").getOrCreate()
