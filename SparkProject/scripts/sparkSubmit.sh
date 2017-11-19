@@ -1,2 +1,2 @@
 export PATH=$PATH:/usr/local/spark/bin
-spark-submit --class "main.SparkLauncher" --master local[*] /home/osboxes/IdeaProjects/streamer.io/SparkProject/target/scala-2.11/sparkproj_2.11-1.jar
+spark-submit --packages org.apache.spark:spark-streaming-kafka-0-10_2.11:2.2.0 --class "main.SparkLauncher" --master local[*] /home/osboxes/IdeaProjects/streamer.io/SparkProject/target/scala-2.11/sparkproj_2.11-1.jar

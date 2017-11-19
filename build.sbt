@@ -42,10 +42,10 @@ lazy val sparkSubmit = taskKey[Unit]("Execute spark-submit")
 lazy val depForSpark = Seq(
   "org.apache.spark" % "spark-core_2.11" % "2.2.0" % "provided",
   "org.apache.spark" % "spark-sql_2.11" % "2.2.0" % "provided",
-  "org.apache.spark" % "spark-streaming_2.11" % "2.2.0" % "provided",
-  "org.apache.spark" % "spark-streaming-kafka-0-8_2.11" % "2.2.0" % "provided"
+  "org.apache.spark" % "spark-streaming_2.11" % "2.2.0",
+  "org.apache.spark" %% "spark-streaming-kafka-0-10" % "2.2.0"
 )
-
+// Use assembly plugin to package everything?
 lazy val sparkProj = (project in file("./SparkProject")).settings(
   organization := "test",
   version := "1",
