@@ -43,7 +43,8 @@ object SparkLauncher {
       "enable.auto.commit" -> (false: java.lang.Boolean)
     )
     val ssc = new StreamingContext(conf, Seconds(1))
-
+    val sc = ssc.sparkContext
+    sc.setLogLevel("ERROR")
 
     val inputStream = KafkaUtils.createDirectStream(ssc, PreferConsistent, Subscribe[String, String](Array("test"), kafkaParams))
     val processedStream = inputStream
@@ -51,10 +52,8 @@ object SparkLauncher {
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y)
 
-    processedStream.print()
+    processedStream.print(50)
     ssc.start()
     ssc.awaitTermination()
-
-
   }
 }
