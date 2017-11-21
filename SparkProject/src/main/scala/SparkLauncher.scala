@@ -52,7 +52,7 @@ object SparkLauncher {
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y)
 
-    processedStream.print(50)
+    processedStream.print(30)
     ssc.start()
     ssc.awaitTermination()
   }
