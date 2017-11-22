@@ -7,7 +7,8 @@ version := "1.0-SNAPSHOT"
 lazy val depForPlay = Seq(
   guice,
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
-  "com.h2database" % "h2" % "1.4.196"
+  "com.h2database" % "h2" % "1.4.196",
+  ws
 )
 
 lazy val root = (project in file("."))
