@@ -1,24 +1,17 @@
 package controllers
 
+import java.util.Properties
 import javax.inject._
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import play.api.mvc._
-import play.api.libs.ws._
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import play.api.libs.json._
+import play.api.libs.ws._
 import play.api.mvc._
-import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.http.HttpEntity
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import akka.stream.scaladsl._
-import akka.util.ByteString
-import play.api.libs.json.{JsError, JsPath, Json, Reads}
-import play.api.libs.functional.syntax._
 
-import scala.concurrent.ExecutionContext
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+
 
 @Singleton
 class WebSocketController @Inject() (cc: ControllerComponents, ws: WSClient) extends AbstractController(cc) {
@@ -29,10 +22,26 @@ class WebSocketController @Inject() (cc: ControllerComponents, ws: WSClient) ext
       .addHttpHeaders("Accept" -> "application/json")
       .withRequestTimeout(10000.millis)
 
-    val futureResponse: Future[Result] = wsRequest.get().map { response =>
-      Ok((response.json \ "Meta Data" \ "1. Information").as[String])
+    val futureResponse: Future[JsValue] = wsRequest.get().map { response =>
+      //(response.json \ "Meta Data" \ "1. Information").as[String]
+      response.json
     }
 
-    futureResponse
+    val kafkaProps = new Properties()
+    kafkaProps.put("bootstrap.servers", "localhost:9092")
+    kafkaProps.put("client.id", "ScalaProducerExample")
+    kafkaProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+
+    val producer = new KafkaProducer[String, String](kafkaProps)
+
+    val apiOutput = Future[Result] {
+        val dataForKafka = new ProducerRecord[String, String]("test", "localhost", Await.result(futureResponse, 20 seconds).toString)
+        producer.send(dataForKafka)
+        producer.close()
+        Ok("Output sent to Kafka")
+    }
+
+    apiOutput
   }
 }

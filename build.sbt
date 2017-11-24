@@ -3,12 +3,13 @@ import scala.sys.process._
 name := """Streamer.io"""
 
 version := "1.0-SNAPSHOT"
-
+// Might need to downgrade Kafka below to 0.10 to match spark-streaming-kafka-0-10
 lazy val depForPlay = Seq(
   guice,
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
   "com.h2database" % "h2" % "1.4.196",
-  ws
+  ws,
+  "org.apache.kafka" % "kafka_2.11" % "1.0.0"
 )
 
 lazy val root = (project in file("."))
