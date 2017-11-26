@@ -9,7 +9,9 @@ lazy val depForPlay = Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
   "com.h2database" % "h2" % "1.4.196",
   ws,
-  "org.apache.kafka" % "kafka_2.11" % "1.0.0"
+  "org.apache.kafka" % "kafka_2.11" % "1.0.0",
+  "org.apache.spark" % "spark-launcher_2.11" % "2.2.0",
+  "commons-io" % "commons-io" % "2.5"
 )
 
 lazy val root = (project in file("."))
@@ -45,6 +47,7 @@ lazy val depForSpark = Seq(
   "org.apache.spark" % "spark-core_2.11" % "2.2.0" % "provided",
   "org.apache.spark" % "spark-sql_2.11" % "2.2.0" % "provided",
   "org.apache.spark" % "spark-streaming_2.11" % "2.2.0",
+  "org.apache.kafka" % "kafka_2.11" % "1.0.0",
   "org.apache.spark" %% "spark-streaming-kafka-0-10" % "2.2.0"
 )
 // Use assembly plugin to package everything?
