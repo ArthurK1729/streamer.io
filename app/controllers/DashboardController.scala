@@ -6,13 +6,21 @@ import play.api.libs.json._
 import play.api.mvc._
 import play.api.libs.functional.syntax._
 
-case class CreateComponent(name: String, mlAlgorithm: String, frequency: String)
+case class CreateComponent(name: String,
+                           link: String,
+                           sampleJson: String,
+                           apiToken: String,
+                           mlAlgorithm: String,
+                           frequency: String)
 
 
 @Singleton
 class DashboardController @Inject()(cc: ControllerComponents) extends AbstractController(cc) {
   implicit val placeReads: Reads[CreateComponent] = (
     (JsPath \ "name").read[String]
+      and (JsPath \ "link").read[String]
+      and (JsPath \ "sampleJson").read[String] // Validate Json in the UI?
+      and (JsPath \ "apiToken").read[String]
       and (JsPath \ "mlAlgorithm").read[String]
       and (JsPath \ "frequency").read[String]
     )(CreateComponent.apply _)

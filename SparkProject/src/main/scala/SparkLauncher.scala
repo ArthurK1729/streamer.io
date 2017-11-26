@@ -1,5 +1,8 @@
 package main
 
+import java.util.Properties
+
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.Seconds
@@ -44,7 +47,14 @@ object SparkLauncher {
     )
     val ssc = new StreamingContext(conf, Seconds(1))
     val sc = ssc.sparkContext
-    sc.setLogLevel("ERROR")
+    //sc.setLogLevel("ERROR")
+
+    val kafkaProps = new Properties()
+    kafkaProps.put("bootstrap.servers", "localhost:9092")
+    kafkaProps.put("client.id", "SparkResultProducer")
+    kafkaProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    val kafkaSink = sc.broadcast(KafkaSink(kafkaProps))
 
     val inputStream = KafkaUtils.createDirectStream(ssc, PreferConsistent, Subscribe[String, String](Array("test"), kafkaParams))
     val processedStream = inputStream
@@ -52,8 +62,35 @@ object SparkLauncher {
       .map(x => (x, 1))
       .reduceByKey((x, y) => x + y)
 
-    processedStream.print(30)
+    processedStream.foreachRDD { rdd =>
+      rdd.foreach { message =>
+        kafkaSink.value.send("testResult", "localhost", message.toString())
+      }
+    }
+
+    //processedStream.print(30)
     ssc.start()
     ssc.awaitTermination()
+  }
+}
+
+class KafkaSink(createProducer: () => KafkaProducer[String, String]) extends Serializable {
+  lazy val producer = createProducer()
+  def send(topic: String, key: String, value: String): Unit = producer.send(new ProducerRecord(topic, key, value))
+}
+
+
+object KafkaSink {
+  def apply(config: Properties): KafkaSink = {
+    val f = () => {
+      val producer = new KafkaProducer[String, String](config)
+
+      sys.addShutdownHook {
+        producer.close()
+      }
+
+      producer
+    }
+    new KafkaSink(f)
   }
 }
