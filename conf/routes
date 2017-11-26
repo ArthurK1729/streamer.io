@@ -1,8 +1,9 @@
 # Create new dashboard component
 POST     /createComponent             controllers.DashboardController.createComponent()
-GET     /getStream                    controllers.WebSocketController.getStream()
-
-GET     /launchSparkJob               controllers.SparkSubmitController.launchSpark()
+# Send request to REST server and deposit the result in Kafka
+GET      /getStream                   controllers.WebSocketController.getStream()
+# Start Spark job that polls Kafka for data, analyses it, and deposits it back into Kafka
+GET      /launchSparkJob              controllers.SparkSubmitController.launchSpark()
 
 # Map static resources from the /public folder to the /assets URL path
 #GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
