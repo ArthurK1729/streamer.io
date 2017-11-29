@@ -8,6 +8,8 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import play.api.libs.concurrent.InjectedActorSupport
+
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 //import play.api.Configuration
@@ -28,7 +30,8 @@ class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: Act
       sparkDirector ! ScheduleSparkJob
 
     case RequestIngestionJob =>
-      ingestionDirector ? ScheduleIngestionJob
+      val jobId = Await.result(ingestionDirector ? ScheduleIngestionJob, 20 seconds).asInstanceOf[String]
+      sender ! jobId
 
     case RequestStopIngestionJob(jobId) =>
       ingestionDirector ! StopIngestionJob(jobId)
