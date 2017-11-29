@@ -1,7 +1,7 @@
 # Create new dashboard component
 POST     /createComponent             controllers.DashboardController.createComponent()
 # Send request to REST server and deposit the result in Kafka
-GET      /getStream                   controllers.WebSocketController.getStream()
+GET      /getStream                   controllers.IngestionController.getStream()
 # Start Spark job that polls Kafka for data, analyses it, and deposits it back into Kafka
 GET      /launchSparkJob              controllers.SparkSubmitController.launchSpark()
 

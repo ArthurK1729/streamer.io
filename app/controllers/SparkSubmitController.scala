@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject._
 
-import actors.DirectorActor.InitialiseSparkJob
+import actors.DirectorActor.RequestSparkJob
 import akka.actor.ActorRef
 import play.api.mvc._
 
@@ -13,7 +13,7 @@ class SparkSubmitController @Inject() (@Named("director") director: ActorRef,
                                        cc: ControllerComponents)
                                       (implicit ec: ExecutionContext) extends AbstractController(cc) {
   def launchSpark() = Action {
-    director ! InitialiseSparkJob
+    director ! RequestSparkJob
     Ok("Request for Spark job sent")
   }
 }

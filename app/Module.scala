@@ -1,4 +1,4 @@
-import actors.{DirectorActor, SparkActor, WebSocketActor}
+import actors._
 import com.google.inject.AbstractModule
 import play.api.libs.concurrent.AkkaGuiceSupport
 
@@ -17,10 +17,12 @@ class Module extends AbstractModule with AkkaGuiceSupport {
   override def configure() = {
     // Bind static actors
     bindActor[DirectorActor]("director")
+    bindActor[IngestionDirectorActor]("ingestionDirector")
+    bindActor[SparkDirectorActor]("sparkDirector")
 
     // Bind actor factories
     bindActorFactory[SparkActor, SparkActor.Factory]
-    bindActorFactory[WebSocketActor, WebSocketActor.Factory]
+    bindActorFactory[IngestionActor, IngestionActor.Factory]
   }
 
 }
