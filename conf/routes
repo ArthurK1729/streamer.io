@@ -2,7 +2,7 @@
 POST     /createComponent             controllers.DashboardController.createComponent()
 # Send request to REST server and deposit the result in Kafka
 GET      /getStream                   controllers.IngestionController.getStream()
-GET      /stopStream                  controllers.IngestionController.stopStream()
+POST     /stopStream                  controllers.IngestionController.stopStream()
 # Start Spark job that polls Kafka for data, analyses it, and deposits it back into Kafka
 GET      /launchSparkJob              controllers.SparkSubmitController.launchSpark()
 

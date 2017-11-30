@@ -35,12 +35,12 @@ class IngestionController @Inject()(@Named("director") director: ActorRef,
   }
 
   def stopStream = Action.async(parse.json) { implicit request =>
-//    implicit val placeReads: Reads[StopJobRequest] = (
-//      (JsPath \ "jobId").read[String]
-//      )(StopJobRequest.apply _)
+    implicit val stopJobRequestReads: Reads[StopJobRequest] = (__ \ "jobId").read[String].map { jobId => StopJobRequest(jobId) }
+
+    val stopJobRequest = request.body.as[StopJobRequest]
 
     Logger.info("IngestionController.stopStream endpoint hit with request: " + request.toString)
-    director ! RequestStopIngestionJob("")
+    director ! RequestStopIngestionJob(stopJobRequest.jobId)
 
     Future.successful(Ok("Job stopped"))
   }

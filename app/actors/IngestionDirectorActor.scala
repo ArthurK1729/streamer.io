@@ -35,6 +35,7 @@ class IngestionDirectorActor @Inject()(ingestionActorFactory: IngestionActor.Fac
 
   def receive = {
     case ScheduleIngestionJob =>
+      // Check if already in the map?
       Logger.info("Ingestion director received message: " + ScheduleIngestionJob.toString)
 
       val kafkaProps = new Properties()
