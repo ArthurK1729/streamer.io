@@ -7,10 +7,11 @@ import java.util.UUID
 import actors.IngestionActor.DoRestRequest
 import akka.actor._
 import org.apache.kafka.clients.producer.KafkaProducer
+import play.api.Logger
 import play.api.libs.concurrent.InjectedActorSupport
+
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.collection.mutable
 
 //import play.api.Configuration
@@ -34,6 +35,8 @@ class IngestionDirectorActor @Inject()(ingestionActorFactory: IngestionActor.Fac
 
   def receive = {
     case ScheduleIngestionJob =>
+      Logger.info("Ingestion director received message: " + ScheduleIngestionJob.toString)
+
       val kafkaProps = new Properties()
       kafkaProps.put("bootstrap.servers", "localhost:9092")
       kafkaProps.put("client.id", "ScalaProducerExample")
@@ -41,6 +44,8 @@ class IngestionDirectorActor @Inject()(ingestionActorFactory: IngestionActor.Fac
       kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
 
       val producer = new KafkaProducer[String, String](kafkaProps)
+
+      Logger.info("Kafka producer set with options: " + kafkaProps.toString)
 
       val jobUUID = UUID.randomUUID().toString
       val jobId = "ingestion-actor-" + jobUUID
@@ -56,11 +61,10 @@ class IngestionDirectorActor @Inject()(ingestionActorFactory: IngestionActor.Fac
       // Synchronise this with a map of jobs on the UI
       ingestionActors += (jobId -> (ingestionActor, cancellable))
 
-
-      println("JOB ID IS " + jobId)
       sender() ! jobId
 
     case StopIngestionJob(jobId) =>
+      Logger.info("Ingestion director received message: " + StopIngestionJob.toString)
       ingestionActors(jobId)._2.cancel()
   }
 

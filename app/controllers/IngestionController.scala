@@ -8,10 +8,16 @@ import akka.util.Timeout
 import play.api.libs.ws._
 import play.api.mvc._
 import akka.pattern.ask
+import play.api.Logger
+import play.api.libs.json.{JsPath, Reads}
 
 import scala.concurrent.duration._
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import play.api.mvc._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
+case class StopJobRequest(jobId: String)
 
 @Singleton
 class IngestionController @Inject()(@Named("director") director: ActorRef,
@@ -21,13 +27,20 @@ class IngestionController @Inject()(@Named("director") director: ActorRef,
   implicit val timeout = Timeout(20 seconds)
 
   def getStream = Action.async { implicit request =>
+    Logger.info("IngestionController.getStream endpoint hit with request: " + request.toString)
+
     val jobId: String = Await.result(director ? RequestIngestionJob, 20 seconds).asInstanceOf[String]
 
     Future.successful(Ok("New job id is " + jobId))
   }
 
-  def stopStream = Action.async { implicit request =>
-    director ! RequestStopIngestionJob
+  def stopStream = Action.async(parse.json) { implicit request =>
+//    implicit val placeReads: Reads[StopJobRequest] = (
+//      (JsPath \ "jobId").read[String]
+//      )(StopJobRequest.apply _)
+
+    Logger.info("IngestionController.stopStream endpoint hit with request: " + request.toString)
+    director ! RequestStopIngestionJob("")
 
     Future.successful(Ok("Job stopped"))
   }

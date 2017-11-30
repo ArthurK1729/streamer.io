@@ -7,6 +7,7 @@ import javax.inject._
 
 import com.google.inject.assistedinject.Assisted
 import org.apache.spark.launcher.SparkLauncher
+import play.api.Logger
 
 object SparkActor {
   case object LaunchSparkJob
@@ -22,6 +23,7 @@ class SparkActor @Inject() (@Assisted config: String) extends Actor {
 
   def receive = {
     case LaunchSparkJob =>
+      Logger.info(self.path.name + " has received message: " + LaunchSparkJob.toString)
       // This returns a Spark Handle which can alter be added to a job manager (Process atm)
     val spark = new SparkLauncher()
         .setAppResource("/home/osboxes/IdeaProjects/streamer.io/SparkProject/target/scala-2.11/sparkproj_2.11-1.jar")
@@ -32,7 +34,8 @@ class SparkActor @Inject() (@Assisted config: String) extends Actor {
         .addSparkArg("--packages", "org.apache.spark:spark-streaming-kafka-0-10_2.11:2.2.0")
         .redirectError(new File("/home/osboxes/utility_scripts/spark.log"))
         .launch
-      // This obviously needs to be in an actor and async
+
+      Logger.info(self.path.name + " has successfully launched a Spark job")
       spark.waitFor()
   }
 }

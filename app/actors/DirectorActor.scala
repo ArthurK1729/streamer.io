@@ -8,6 +8,7 @@ import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import play.api.libs.concurrent.InjectedActorSupport
+import play.api.Logger
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -25,15 +26,21 @@ class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: Act
   import DirectorActor._
   implicit val timeout = Timeout(20 seconds)
 
+  // Generate a single ID here to be able to correlate ingestion actors and the respective Spark jobs
   def receive = {
     case RequestSparkJob =>
+      Logger.info("Director received message: " + RequestSparkJob.toString)
       sparkDirector ! ScheduleSparkJob
 
     case RequestIngestionJob =>
+      Logger.info("Director received message: " + RequestIngestionJob.toString)
       val jobId = Await.result(ingestionDirector ? ScheduleIngestionJob, 20 seconds).asInstanceOf[String]
+
+      Logger.info("Job id of new job: " + jobId)
       sender ! jobId
 
     case RequestStopIngestionJob(jobId) =>
+      Logger.info("Director received message: " + RequestStopIngestionJob.toString)
       ingestionDirector ! StopIngestionJob(jobId)
   }
 }
