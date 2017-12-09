@@ -5,7 +5,7 @@ import javax.inject.Inject
 import actors.SparkActor.LaunchSparkJob
 import akka.actor.{Actor, ActorRef}
 import play.api.libs.concurrent.InjectedActorSupport
-import play.api.Logger
+import play.api.{Configuration, Logger}
 
 import scala.collection.mutable
 
@@ -17,7 +17,7 @@ object SparkDirectorActor {
   }
 }
 
-class SparkDirectorActor @Inject()(ingestionActorFactory: SparkActor.Factory)
+class SparkDirectorActor @Inject()(configuration: Configuration, ingestionActorFactory: SparkActor.Factory)
   extends Actor with InjectedActorSupport {
 
   import SparkDirectorActor._
@@ -27,7 +27,8 @@ class SparkDirectorActor @Inject()(ingestionActorFactory: SparkActor.Factory)
   def receive = {
     case ScheduleSparkJob =>
       Logger.info("Spark director has received message: " + ScheduleSparkJob.toString)
-      val sparkActor: ActorRef = injectedChild(ingestionActorFactory("key"), "spark-actor-1")
+      val sparkActor: ActorRef = injectedChild(ingestionActorFactory("key"),
+        configuration.get[String]("spark.prefix") + "1")
 
       sparkActor ! LaunchSparkJob
   }

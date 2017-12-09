@@ -4,25 +4,22 @@ import javax.inject._
 
 import actors.DirectorActor.{RequestIngestionJob, RequestStopIngestionJob}
 import akka.actor.ActorRef
+import akka.pattern.ask
 import akka.util.Timeout
+import play.api.Logger
+import play.api.libs.json.{Reads, _}
 import play.api.libs.ws._
 import play.api.mvc._
-import akka.pattern.ask
-import play.api.Logger
-import play.api.libs.json.{JsPath, Reads}
 
 import scala.concurrent.duration._
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
-import play.api.mvc._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 case class StopJobRequest(jobId: String)
 
 @Singleton
-class IngestionController @Inject()(@Named("director") director: ActorRef,
-                                    cc: ControllerComponents, ws: WSClient)
-                                   (implicit ec: ExecutionContext) extends AbstractController(cc) {
+class JobController @Inject()(@Named("director") director: ActorRef,
+                              cc: ControllerComponents, ws: WSClient)
+                             (implicit ec: ExecutionContext) extends AbstractController(cc) {
 
   implicit val timeout = Timeout(20 seconds)
 
@@ -43,5 +40,11 @@ class IngestionController @Inject()(@Named("director") director: ActorRef,
     director ! RequestStopIngestionJob(stopJobRequest.jobId)
 
     Future.successful(Ok("Job stopped"))
+  }
+
+  def createNewJob = Action.async(parse.json) { implicit request =>
+
+
+    Future.successful(Ok("temp"))
   }
 }

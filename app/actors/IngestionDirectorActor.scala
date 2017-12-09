@@ -7,7 +7,7 @@ import java.util.UUID
 import actors.IngestionActor.DoRestRequest
 import akka.actor._
 import org.apache.kafka.clients.producer.KafkaProducer
-import play.api.Logger
+import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.InjectedActorSupport
 
 import scala.concurrent.duration._
@@ -25,7 +25,7 @@ object IngestionDirectorActor {
   }
 }
 
-class IngestionDirectorActor @Inject()(ingestionActorFactory: IngestionActor.Factory)
+class IngestionDirectorActor @Inject()(configuration: Configuration, ingestionActorFactory: IngestionActor.Factory)
   extends Actor with InjectedActorSupport {
 
   import IngestionDirectorActor._
@@ -49,7 +49,8 @@ class IngestionDirectorActor @Inject()(ingestionActorFactory: IngestionActor.Fac
       Logger.info("Kafka producer set with options: " + kafkaProps.toString)
 
       val jobUUID = UUID.randomUUID().toString
-      val jobId = "ingestion-actor-" + jobUUID
+      // Take prefix from global config object
+      val jobId = configuration.get[String]("ingestion.prefix") + jobUUID
 
       val ingestionActor: ActorRef = injectedChild(ingestionActorFactory(producer), jobId)
       val cancellable =

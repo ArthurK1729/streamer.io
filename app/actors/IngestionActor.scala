@@ -11,9 +11,11 @@ import play.api.Logger
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object IngestionActor {
   case object DoRestRequest
+  case class StoreInKafka(data: String)
 
   // This trait is autoimplemented by guice
   trait Factory {
@@ -35,15 +37,18 @@ class IngestionActor @Inject()(ws: WSClient,
         .addHttpHeaders("Accept" -> "application/json")
         .withRequestTimeout(20000 millis)
 
-      val futureResponse: Future[JsValue] = wsRequest.get().map { response =>
+      wsRequest.get().map { response =>
         //(response.json \ "Meta Data" \ "1. Information").as[String]
         response.json
+      }.onComplete {
+        case Success(data) =>
+          val dataForKafka = new ProducerRecord[String, String]("test", "localhost", data.toString)
+          Logger.debug("Data to store in Kafka: " + dataForKafka.toString)
+          producer.send(dataForKafka)
+        case Failure(error) =>
+          // TODO: Error handling
+          Logger.error(error.toString)
       }
-
-      val dataForKafka = new ProducerRecord[String, String]("test", "localhost", Await.result(futureResponse, 20 seconds).toString)
-      Logger.debug("Data to store in Kafka: " + dataForKafka.toString)
-
-      producer.send(dataForKafka)
   }
 
   override def postStop(): Unit = {
