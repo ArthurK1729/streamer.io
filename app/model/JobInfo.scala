@@ -1,3 +1,3 @@
 package model
 
-case class JobInfo(sources: Array[SourceInfo], mlAlgorithm: String)
+case class JobInfo(sources: Seq[SourceInfo], mlAlgorithm: String)

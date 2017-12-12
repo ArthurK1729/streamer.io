@@ -6,6 +6,7 @@ import java.util.UUID
 
 import actors.IngestionActor.DoRestRequest
 import akka.actor._
+import model.SourceInfo
 import org.apache.kafka.clients.producer.KafkaProducer
 import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.InjectedActorSupport
@@ -17,7 +18,7 @@ import scala.collection.mutable
 //import play.api.Configuration
 
 object IngestionDirectorActor {
-  case object ScheduleIngestionJob
+  case class ScheduleIngestionJob(jobId: String, sourceInfo: SourceInfo, kafkaIngestionTopic: String)
   case class StopIngestionJob(jobId: String)
 
   trait Factory {
@@ -27,20 +28,21 @@ object IngestionDirectorActor {
 
 class IngestionDirectorActor @Inject()(configuration: Configuration, ingestionActorFactory: IngestionActor.Factory)
   extends Actor with InjectedActorSupport {
-
   import IngestionDirectorActor._
 
-
-  val ingestionActors: mutable.Map[String, (ActorRef, Cancellable)] = mutable.Map()
+  val ingestionActors: mutable.Map[String, mutable.Map[String, (ActorRef, Cancellable)]] = mutable.Map()
+  val ingestionPrefix = configuration.get[String]("ingestion.prefix")
 
   def receive = {
-    case ScheduleIngestionJob =>
-      // Check if already in the map?
+    case ScheduleIngestionJob(jobId, sourceInfo, kafkaIngestionTopic) =>
+      //TODO: Check if already in the map?
       Logger.info("Ingestion director received message: " + ScheduleIngestionJob.toString)
+
+      val ingestionActorJobId = ingestionPrefix + jobId + "-" + sourceInfo.sourceName
 
       val kafkaProps = new Properties()
       kafkaProps.put("bootstrap.servers", "localhost:9092")
-      kafkaProps.put("client.id", "ScalaProducerExample")
+      kafkaProps.put("client.id", ingestionActorJobId)
       kafkaProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
       kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
 
@@ -48,26 +50,31 @@ class IngestionDirectorActor @Inject()(configuration: Configuration, ingestionAc
 
       Logger.info("Kafka producer set with options: " + kafkaProps.toString)
 
-      val jobUUID = UUID.randomUUID().toString
-      // Take prefix from global config object
-      val jobId = configuration.get[String]("ingestion.prefix") + jobUUID
+      val ingestionActor: ActorRef = injectedChild(ingestionActorFactory(producer,
+        sourceInfo.sourceURL,
+        kafkaIngestionTopic
+      ), ingestionActorJobId)
 
-      val ingestionActor: ActorRef = injectedChild(ingestionActorFactory(producer), jobId)
-      val cancellable =
+      val pollingHandle =
         context.system.scheduler.schedule(
           Duration.Zero,
-          5 seconds,
+          sourceInfo.pollingFrequencySeconds.toInt seconds,
           ingestionActor,
           DoRestRequest)
 
-      // Synchronise this with a map of jobs on the UI
-      ingestionActors += (jobId -> (ingestionActor, cancellable))
-
-      sender() ! jobId
+      //TODO: Synchronise this with a map of jobs on the UI
+      if (ingestionActors isDefinedAt jobId) {
+        ingestionActors(jobId) += (ingestionActorJobId -> (ingestionActor, pollingHandle))
+      } else {
+        ingestionActors.put(jobId, mutable.Map())
+        ingestionActors(jobId) += (ingestionActorJobId -> (ingestionActor, pollingHandle))
+      }
 
     case StopIngestionJob(jobId) =>
       Logger.info("Ingestion director received message: " + StopIngestionJob.toString)
-      ingestionActors(jobId)._2.cancel()
+      ingestionActors(jobId).values.foreach { ingestionActor =>
+        ingestionActor._2.cancel()
+      }
   }
 
 

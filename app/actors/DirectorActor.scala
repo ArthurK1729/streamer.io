@@ -1,17 +1,16 @@
 package actors
 
+import java.util.UUID
 import javax.inject._
 
 import actors.IngestionDirectorActor.{ScheduleIngestionJob, StopIngestionJob}
 import actors.SparkDirectorActor.ScheduleSparkJob
 import akka.actor._
-import akka.pattern.ask
 import akka.util.Timeout
 import model.JobInfo
+import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.InjectedActorSupport
-import play.api.Logger
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
 
 //import play.api.Configuration
@@ -24,7 +23,8 @@ object DirectorActor {
 }
 
 class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: ActorRef,
-                              @Named("sparkDirector") sparkDirector: ActorRef) extends Actor with InjectedActorSupport {
+                              @Named("sparkDirector") sparkDirector: ActorRef,
+                              configuration: Configuration) extends Actor with InjectedActorSupport {
   import DirectorActor._
   implicit val timeout = Timeout(20 seconds)
 
@@ -39,16 +39,28 @@ class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: Act
       Logger.info("Director received message: " + RequestIngestionJob.toString)
       Logger.info("Director is forwarding RequestIngestionJob to " + ingestionDirector.path.name)
 
-      //val jobId = Await.result(ingestionDirector ? ScheduleIngestionJob, 20 seconds).asInstanceOf[String]
-
-
       ingestionDirector.forward(ScheduleIngestionJob)
-
-//      Logger.info("Job id of new job: " + jobId)
-//      sender ! jobId
 
     case RequestStopIngestionJob(jobId) =>
       Logger.info("Director received message: " + RequestStopIngestionJob.toString)
       ingestionDirector ! StopIngestionJob(jobId)
+
+    case CreateNewJob(jobInfo) =>
+      Logger.info("Director received message: " + CreateNewJob.toString())
+      val jobUUID = UUID.randomUUID().toString
+
+      //TODO: use kafka prefixes
+      val kafkaSourceTopic = "test"
+      val kafkaDestinationTopic = "testResult"
+
+      Logger.info("Director generated id for new job: " + jobUUID)
+
+      jobInfo.sources.foreach { source =>
+        ingestionDirector ! ScheduleIngestionJob(jobUUID, source, kafkaSourceTopic)
+      }
+
+      sparkDirector ! ScheduleSparkJob(jobUUID, jobInfo.mlAlgorithm, kafkaDestinationTopic, kafkaSourceTopic)
+
+      sender() ! jobUUID
   }
 }

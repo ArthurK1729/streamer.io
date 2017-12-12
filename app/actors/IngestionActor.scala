@@ -5,12 +5,11 @@ import javax.inject._
 import akka.actor._
 import com.google.inject.assistedinject.Assisted
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-import play.api.libs.json.JsValue
-import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.Logger
+import play.api.libs.ws.{WSClient, WSRequest}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object IngestionActor {
@@ -19,21 +18,25 @@ object IngestionActor {
 
   // This trait is autoimplemented by guice
   trait Factory {
-    def apply(producer: KafkaProducer[String, String]): Actor
+    def apply(@Assisted("producer") producer: KafkaProducer[String, String], @Assisted("sourceURL") sourceURL: String, @Assisted("kafkaTopic") kafkaTopic: String): Actor
   }
 }
 
+
+
+
 class IngestionActor @Inject()(ws: WSClient,
-                               @Assisted producer: KafkaProducer[String, String])
+                               @Assisted("producer") producer: KafkaProducer[String, String],
+                               @Assisted("sourceURL") sourceURL: String,
+                               @Assisted("kafkaTopic") kafkaTopic: String)
                               (implicit ec: ExecutionContext) extends Actor {
   import IngestionActor._
 
   def receive = {
     case DoRestRequest =>
       Logger.info(self.path.name + " has received message: " + DoRestRequest.toString)
-      val URL = """https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=1min&apikey=VVF9X8MSOTTULA37"""
 
-      val wsRequest: WSRequest = ws.url(URL)
+      val wsRequest: WSRequest = ws.url(sourceURL)
         .addHttpHeaders("Accept" -> "application/json")
         .withRequestTimeout(20000 millis)
 
@@ -42,7 +45,7 @@ class IngestionActor @Inject()(ws: WSClient,
         response.json
       }.onComplete {
         case Success(data) =>
-          val dataForKafka = new ProducerRecord[String, String]("test", "localhost", data.toString)
+          val dataForKafka = new ProducerRecord[String, String](kafkaTopic, "localhost", data.toString)
           Logger.debug("Data to store in Kafka: " + dataForKafka.toString)
           producer.send(dataForKafka)
         case Failure(error) =>
