@@ -19,7 +19,7 @@ import scala.collection.mutable
 
 object IngestionDirectorActor {
   case class ScheduleIngestionJob(jobId: String, sourceInfo: SourceInfo, kafkaIngestionTopic: String)
-  case class StopIngestionJob(jobId: String)
+  case class StopIngestionJobs(jobId: String)
 
   trait Factory {
     def apply(config: String): Actor
@@ -70,9 +70,11 @@ class IngestionDirectorActor @Inject()(configuration: Configuration, ingestionAc
         ingestionActors(jobId) += (ingestionActorJobId -> (ingestionActor, pollingHandle))
       }
 
-    case StopIngestionJob(jobId) =>
-      Logger.info("Ingestion director received message: " + StopIngestionJob.toString)
+    case StopIngestionJobs(jobId) =>
+      //TODO: Empty the map for the ID when the jobs are deleted
+      Logger.info("Ingestion director received message: " + StopIngestionJobs.toString)
       ingestionActors(jobId).values.foreach { ingestionActor =>
+        Logger.info("Stopping ingestion job: " + ingestionActor._1.path.name)
         ingestionActor._2.cancel()
       }
   }

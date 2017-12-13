@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject._
 
-import actors.DirectorActor.{CreateNewJob, RequestIngestionJob, RequestStopIngestionJob}
+import actors.DirectorActor.{CreateNewJob, RequestIngestionJob, RequestStopIngestionJob, StopJobCompletely}
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
@@ -46,6 +46,17 @@ class JobController @Inject()(@Named("director") director: ActorRef,
     Future.successful(Ok("Job stopped"))
   }
 
+  def stopJobCompletely = Action.async(parse.json) { implicit request =>
+    implicit val stopJobRequestReads: Reads[StopJobRequest] = (__ \ "jobId").read[String].map { jobId => StopJobRequest(jobId) }
+
+    val stopJobRequest = request.body.as[StopJobRequest]
+
+    Logger.info("JobController.stopJobCompletely endpoint hit with request: " + request.toString)
+    director ! StopJobCompletely(stopJobRequest.jobId)
+
+    Future.successful(Ok("Job stopped"))
+  }
+
   def createNewJob = Action.async(parse.json) { implicit request =>
     implicit val sourceInfoReads: Reads[SourceInfo] = (
       (JsPath \ "sourceName").read[String]
@@ -67,14 +78,11 @@ class JobController @Inject()(@Named("director") director: ActorRef,
 
     jobJsonBody.fold(
       errors => {
-        BadRequest(Json.obj("message" -> JsError.toJson(errors)))
+        Future.successful(BadRequest(Json.obj("message" -> JsError.toJson(errors))))
       },
-      componentDetails => {
-        //TODO: Needs to give you back the ID of the job
-        director ! CreateNewJob(request.body.as[JobInfo])
+      success => {
+        (director ? CreateNewJob(request.body.as[JobInfo])).map { future => Ok(future.asInstanceOf[String])}
       }
     )
-
-    Future.successful(Ok("temp"))
   }
 }

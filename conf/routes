@@ -4,6 +4,7 @@ POST     /createComponent             controllers.DashboardController.createComp
 GET      /getStream                   controllers.JobController.getStream()
 POST     /stopStream                  controllers.JobController.stopStream()
 POST     /createNewJob                controllers.JobController.createNewJob()
+POST     /stopJobCompletely           controllers.JobController.stopJobCompletely()
 # Start Spark job that polls Kafka for data, analyses it, and deposits it back into Kafka
 GET      /launchSparkJob              controllers.SparkSubmitController.launchSpark()
 

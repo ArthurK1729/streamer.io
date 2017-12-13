@@ -18,7 +18,9 @@ object IngestionActor {
 
   // This trait is autoimplemented by guice
   trait Factory {
-    def apply(@Assisted("producer") producer: KafkaProducer[String, String], @Assisted("sourceURL") sourceURL: String, @Assisted("kafkaTopic") kafkaTopic: String): Actor
+    def apply(@Assisted("producer") producer: KafkaProducer[String, String],
+              @Assisted("sourceURL") sourceURL: String,
+              @Assisted("kafkaTopic") kafkaTopic: String): Actor
   }
 }
 

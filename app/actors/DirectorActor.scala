@@ -3,8 +3,8 @@ package actors
 import java.util.UUID
 import javax.inject._
 
-import actors.IngestionDirectorActor.{ScheduleIngestionJob, StopIngestionJob}
-import actors.SparkDirectorActor.ScheduleSparkJob
+import actors.IngestionDirectorActor.{ScheduleIngestionJob, StopIngestionJobs}
+import actors.SparkDirectorActor.{ScheduleSparkJob, StopSparkJob}
 import akka.actor._
 import akka.util.Timeout
 import model.JobInfo
@@ -20,6 +20,7 @@ object DirectorActor {
   case object RequestIngestionJob
   case class RequestStopIngestionJob(jobId: String)
   case class CreateNewJob(jobInfo: JobInfo)
+  case class StopJobCompletely(jobId: String)
 }
 
 class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: ActorRef,
@@ -43,7 +44,7 @@ class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: Act
 
     case RequestStopIngestionJob(jobId) =>
       Logger.info("Director received message: " + RequestStopIngestionJob.toString)
-      ingestionDirector ! StopIngestionJob(jobId)
+      ingestionDirector ! StopIngestionJobs(jobId)
 
     case CreateNewJob(jobInfo) =>
       Logger.info("Director received message: " + CreateNewJob.toString())
@@ -62,5 +63,9 @@ class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: Act
       sparkDirector ! ScheduleSparkJob(jobUUID, jobInfo.mlAlgorithm, kafkaDestinationTopic, kafkaSourceTopic)
 
       sender() ! jobUUID
+
+    case StopJobCompletely(jobId) =>
+      ingestionDirector ! StopIngestionJobs(jobId)
+      sparkDirector ! StopSparkJob(jobId)
   }
 }
