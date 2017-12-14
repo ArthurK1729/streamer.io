@@ -35,8 +35,8 @@ class IngestionActor @Inject()(ws: WSClient,
   import IngestionActor._
 
   def receive = {
-    case DoRestRequest =>
-      Logger.info(self.path.name + " has received message: " + DoRestRequest.toString)
+    case msg @ DoRestRequest =>
+      Logger.info(self.path.name + " has received message: " + msg.toString)
 
       val wsRequest: WSRequest = ws.url(sourceURL)
         .addHttpHeaders("Accept" -> "application/json")

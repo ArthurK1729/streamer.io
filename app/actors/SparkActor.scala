@@ -23,8 +23,8 @@ class SparkActor @Inject()() extends Actor {
   import SparkActor._
 
   def receive = {
-    case LaunchSparkJob =>
-      Logger.info(self.path.name + " has received message: " + LaunchSparkJob.toString)
+    case msg @ LaunchSparkJob =>
+      Logger.info(self.path.name + " has received message: " + msg.toString)
       // Replace most of below with config calls
       val sparkHandle = new SparkLauncher()
         .setAppResource("/home/osboxes/IdeaProjects/streamer.io/SparkProject/target/scala-2.11/sparkproj_2.11-1.jar")

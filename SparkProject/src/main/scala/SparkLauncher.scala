@@ -1,6 +1,6 @@
 package main
 
-import java.util.Properties
+import java.util.{Properties, UUID}
 
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
 import org.apache.spark.sql.SparkSession
@@ -51,7 +51,7 @@ object SparkLauncher {
 
     val kafkaProps = new Properties()
     kafkaProps.put("bootstrap.servers", "localhost:9092")
-    kafkaProps.put("client.id", "SparkResultProducer")
+    kafkaProps.put("client.id", UUID.randomUUID().toString)
     kafkaProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     val kafkaSink = sc.broadcast(KafkaSink(kafkaProps))

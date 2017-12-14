@@ -34,9 +34,9 @@ class IngestionDirectorActor @Inject()(configuration: Configuration, ingestionAc
   val ingestionPrefix = configuration.get[String]("ingestion.prefix")
 
   def receive = {
-    case ScheduleIngestionJob(jobId, sourceInfo, kafkaIngestionTopic) =>
+    case msg @ ScheduleIngestionJob(jobId, sourceInfo, kafkaIngestionTopic) =>
       //TODO: Check if already in the map?
-      Logger.info("Ingestion director received message: " + ScheduleIngestionJob.toString)
+      Logger.info("Ingestion director received message: " + msg.toString)
 
       val ingestionActorJobId = ingestionPrefix + jobId + "-" + sourceInfo.sourceName
 
@@ -70,11 +70,13 @@ class IngestionDirectorActor @Inject()(configuration: Configuration, ingestionAc
         ingestionActors(jobId) += (ingestionActorJobId -> (ingestionActor, pollingHandle))
       }
 
-    case StopIngestionJobs(jobId) =>
+    case msg @ StopIngestionJobs(jobId) =>
       //TODO: Empty the map for the ID when the jobs are deleted
-      Logger.info("Ingestion director received message: " + StopIngestionJobs.toString)
+      Logger.info("Ingestion director received message: " + msg.toString)
       ingestionActors(jobId).values.foreach { ingestionActor =>
         Logger.info("Stopping ingestion job: " + ingestionActor._1.path.name)
+
+        context.system.stop(ingestionActor._1)
         ingestionActor._2.cancel()
       }
   }

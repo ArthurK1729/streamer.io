@@ -32,22 +32,22 @@ class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: Act
   // Generate a single ID here to be able to correlate ingestion actors and the respective Spark jobs
   // Receive a single CreateJob request from the UI and delegate tasks to Ingestion/Spark directors
   def receive = {
-    case RequestSparkJob =>
-      Logger.info("Director received message: " + RequestSparkJob.toString)
+    case msg @ RequestSparkJob =>
+      Logger.info("Director received message: " + msg.toString)
       sparkDirector ! ScheduleSparkJob
 
-    case RequestIngestionJob =>
-      Logger.info("Director received message: " + RequestIngestionJob.toString)
+    case msg @ RequestIngestionJob =>
+      Logger.info("Director received message: " + msg.toString)
       Logger.info("Director is forwarding RequestIngestionJob to " + ingestionDirector.path.name)
 
       ingestionDirector.forward(ScheduleIngestionJob)
 
-    case RequestStopIngestionJob(jobId) =>
-      Logger.info("Director received message: " + RequestStopIngestionJob.toString)
+    case msg @ RequestStopIngestionJob(jobId) =>
+      Logger.info("Director received message: " + msg.toString)
       ingestionDirector ! StopIngestionJobs(jobId)
 
-    case CreateNewJob(jobInfo) =>
-      Logger.info("Director received message: " + CreateNewJob.toString())
+    case msg @ CreateNewJob(jobInfo) =>
+      Logger.info("Director received message: " + msg.toString)
       val jobUUID = UUID.randomUUID().toString
 
       //TODO: use kafka prefixes
@@ -64,7 +64,8 @@ class DirectorActor @Inject()(@Named("ingestionDirector") ingestionDirector: Act
 
       sender() ! jobUUID
 
-    case StopJobCompletely(jobId) =>
+    case msg @ StopJobCompletely(jobId) =>
+      Logger.info("Director received message: " + msg.toString)
       ingestionDirector ! StopIngestionJobs(jobId)
       sparkDirector ! StopSparkJob(jobId)
   }
