@@ -48,7 +48,9 @@ lazy val depForSpark = Seq(
   "org.apache.spark" % "spark-sql_2.11" % "2.2.0" % "provided",
   "org.apache.spark" % "spark-streaming_2.11" % "2.2.0",
   "org.apache.kafka" % "kafka_2.11" % "1.0.0",
-  "org.apache.spark" %% "spark-streaming-kafka-0-10" % "2.2.0"
+  "org.apache.spark" %% "spark-streaming-kafka-0-10" % "2.2.0",
+  "org.apache.spark" %% "spark-mllib" % "2.2.0",
+  "org.json4s" %% "json4s-jackson" % "3.5.2"
 )
 // Use assembly plugin to package everything?
 lazy val sparkProj = (project in file("./SparkProject")).settings(
