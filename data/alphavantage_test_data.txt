@@ -1,4 +1,5 @@
 LINK: https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=MSFT&interval=1min&apikey=VVF9X8MSOTTULA37s
+https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=BTC&to_currency=CNY&apikey=VVF9X8MSOTTULA37s
 
 {
     "Meta Data": {

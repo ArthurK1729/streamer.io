@@ -1,19 +1,19 @@
 package main
 
-import java.util.Properties
+import java.util.{Properties, UUID}
 
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.StreamingContext
-import org.apache.spark.streaming.Seconds
+import org.apache.spark.streaming.{Seconds, StreamingContext}
 //import org.apache.spark.streaming.kafka.KafkaUtils
-import org.apache.spark.SparkConf
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.spark._
-import org.apache.spark.streaming._
-import org.apache.spark.streaming.kafka010._
-import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
+import org.apache.spark.SparkConf
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.regression.{LabeledPoint, StreamingLinearRegressionWithSGD}
 import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
+import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
+import org.apache.spark.streaming.kafka010._
+import org.json4s._
+import org.json4s.jackson.JsonMethods._
 
 object SparkLauncher {
   def main(args: Array[String]): Unit = {
@@ -51,24 +51,49 @@ object SparkLauncher {
 
     val kafkaProps = new Properties()
     kafkaProps.put("bootstrap.servers", "localhost:9092")
-    kafkaProps.put("client.id", "SparkResultProducer")
+    kafkaProps.put("client.id", UUID.randomUUID().toString)
     kafkaProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     val kafkaSink = sc.broadcast(KafkaSink(kafkaProps))
 
     val inputStream = KafkaUtils.createDirectStream(ssc, PreferConsistent, Subscribe[String, String](Array("test"), kafkaParams))
-    val processedStream = inputStream
-      .flatMap(record => record.value.split(" "))
-      .map(x => (x, 1))
-      .reduceByKey((x, y) => x + y)
 
-    processedStream.foreachRDD { rdd =>
-      rdd.foreach { message =>
-        kafkaSink.value.send("testResult", "localhost", message.toString())
-      }
-    }
 
+    val trainingData = inputStream.map(record => {
+      val parsedJson = parse(record.value().toString, useBigDecimalForDouble = false)
+
+      val data = ((parsedJson \ "index").asInstanceOf[Double],
+        (parsedJson \ "timestamp").asInstanceOf[Double])
+
+      LabeledPoint(data._1, Vectors.dense(Array(data._1, data._2)))
+    }).cache()
+
+    val numFeatures = 2
+    val model = new StreamingLinearRegressionWithSGD()
+      .setInitialWeights(Vectors.zeros(numFeatures))
+
+    // Make a prediction
+
+
+//    val processedStream = inputStream
+//      .flatMap(record => record.value.split(" "))
+//      .map(x => (x, 1))
+//      .reduceByKey((x, y) => x + y)
+
+//    processedStream.foreachRDD { rdd =>
+//      rdd.foreach { message =>
+//        kafkaSink.value.send("testResult", "localhost", message.toString())
+//      }
+//    }
     //processedStream.print(30)
+
+    model.trainOn(trainingData)
+
+    trainingData.foreachRDD(rdd => {
+      kafkaSink.value.send("testResult", "localhost", rdd.toString())
+    })
+
+
     ssc.start()
     ssc.awaitTermination()
   }

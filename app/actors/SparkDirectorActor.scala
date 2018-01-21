@@ -35,8 +35,8 @@ class SparkDirectorActor @Inject()(configuration: Configuration, ingestionActorF
   val sparkActors: mutable.Map[String, (ActorRef, Process)] = mutable.Map()
 
   def receive = {
-    case ScheduleSparkJob(jobId, mlAlgorithm, kafkaSourceTopic, kafkaDestinationTopic) =>
-      Logger.info("Spark director has received message: " + ScheduleSparkJob.toString)
+    case msg @ ScheduleSparkJob(jobId, mlAlgorithm, kafkaSourceTopic, kafkaDestinationTopic) =>
+      Logger.info("Spark director has received message: " + msg.toString)
 
 
 
@@ -47,11 +47,12 @@ class SparkDirectorActor @Inject()(configuration: Configuration, ingestionActorF
 
       sparkActor ! LaunchSparkJob
 
-    case RegisterNewSparkActor(sparkHandle: Process, jobId: String) =>
+    case msg @ RegisterNewSparkActor(sparkHandle: Process, jobId: String) =>
+      Logger.info("Spark director has received message: " + msg.toString)
       sparkActors += (jobId -> (sender(), sparkHandle))
 
-    case StopSparkJob(jobId) =>
-      Logger.info("Spark director has received message: " + ScheduleSparkJob.toString)
+    case msg @ StopSparkJob(jobId) =>
+      Logger.info("Spark director has received message: " + msg.toString)
       Logger.info("Destroying Spark job with id: " + sparkActors(jobId)._1.path.name)
       sparkActors(jobId)._2.destroy()
   }
